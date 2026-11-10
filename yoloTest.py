@@ -199,6 +199,25 @@ def classify_gesture(keypoints, confidences):
     if arms_at_shoulder_height and left_arm_straight_out and right_arm_straight_out:
         return "T-Pose"
 
+
+    # --------------------------------------------------
+    # 5. FLEX (Both arms Flexing)
+    # --------------------------------------------------
+    t_vertical_tol = 0.35 * torso_height
+
+    arms_at_shoulder_height = (
+        abs(le[1] - ls[1]) < t_vertical_tol
+        and abs(re[1] - rs[1]) < t_vertical_tol
+    )
+
+    align_wrists_and_elbows = (
+        abs(le[0] - lw[0]) < t_vertical_tol
+        and abs(re[0] - rw[0]) < t_vertical_tol
+    )
+
+    if arms_at_shoulder_height and align_wrists_and_elbows:
+        return "Flexing"
+
     # --------------------------------------------------
     # 5. HANDS ON HIPS (Diamond silhouette)
     # --------------------------------------------------
