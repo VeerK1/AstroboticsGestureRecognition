@@ -121,6 +121,11 @@ def classify_gesture(keypoints, confidences):
     left_wrist_high = lw[1] < (ls[1] - raised_margin)
     right_wrist_high = rw[1] < (rs[1] - raised_margin)
 
+    # Horizontal arm up thresholds
+    aligned_margin = 0.1 * torso_height
+    left_wrist_aligned = (ls[0] + aligned_margin) < lw[0] < (ls[0] - aligned_margin)
+    right_wrist_aligned = (rs[0] + aligned_margin) < rw[0] < (rs[0] - aligned_margin)
+
     # Neutral "arm down" threshold: wrist is well below chest level
     arm_down_y = shoulder_y + 0.55 * torso_height
     left_wrist_down = lw[1] > arm_down_y
@@ -129,7 +134,7 @@ def classify_gesture(keypoints, confidences):
     # --------------------------------------------------
     # 2. HANDS RAISED (Both hands up)
     # --------------------------------------------------
-    if left_wrist_high and right_wrist_high:
+    if left_wrist_high and left_wrist_aligned and right_wrist_high and right_wrist_aligned:
         return "Hands Raised"
 
     # --------------------------------------------------
