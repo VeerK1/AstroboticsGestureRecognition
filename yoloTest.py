@@ -121,7 +121,7 @@ def classify_gesture(keypoints, confidences):
     left_wrist_high = lw[1] < (ls[1] - raised_margin)
     right_wrist_high = rw[1] < (rs[1] - raised_margin)
 
-    # Horizontal arm up thresholds
+    # Horizontal arm up thresholds (Wrist must be directly above shoulder)
     aligned_margin = 0.1 * torso_height
     left_wrist_aligned = (ls[0] + aligned_margin) < lw[0] < (ls[0] - aligned_margin)
     right_wrist_aligned = (rs[0] + aligned_margin) < rw[0] < (rs[0] - aligned_margin)
