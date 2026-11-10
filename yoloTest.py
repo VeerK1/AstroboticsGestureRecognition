@@ -124,9 +124,9 @@ def classify_gesture(keypoints, confidences):
     right_wrist_high = rw[1] < (rs[1] - raised_margin)
 
     # Horizontal arm up thresholds (Wrist must be directly above shoulder)
-    aligned_margin = 0.35 * torso_height
-    left_wrist_aligned = (ls[0] + aligned_margin) > lw[0] > (ls[0] - aligned_margin)
-    right_wrist_aligned = (rs[0] + aligned_margin) > rw[0] > (rs[0] - aligned_margin)
+    aligned_margin = 0.30 * torso_height
+    left_wrist_aligned = (ls[0] + aligned_margin) > le[0] > (ls[0] - aligned_margin)
+    right_wrist_aligned = (rs[0] + aligned_margin) > re[0] > (rs[0] - aligned_margin)
 
     # Neutral "arm down" threshold: wrist is well below chest level
     arm_down_y = shoulder_y + 0.55 * torso_height
@@ -176,7 +176,7 @@ def classify_gesture(keypoints, confidences):
     # --------------------------------------------------
     # 4. T-POSE (Both arms extended straight out at shoulder level)
     # --------------------------------------------------
-    t_vertical_tol = 0.35 * torso_height
+    t_vertical_tol = 0.25 * torso_height
 
     arms_at_shoulder_height = (
         abs(le[1] - ls[1]) < t_vertical_tol
@@ -203,7 +203,7 @@ def classify_gesture(keypoints, confidences):
     # --------------------------------------------------
     # 5. FLEX (Both arms Flexing)
     # --------------------------------------------------
-    t_vertical_tol = 0.35 * torso_height
+    t_vertical_tol = 0.20 * torso_height
 
     arms_at_shoulder_height = (
         abs(le[1] - ls[1]) < t_vertical_tol
