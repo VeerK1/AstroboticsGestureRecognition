@@ -22,18 +22,14 @@ LEFT_HIP = 11
 RIGHT_HIP = 12
 LEFT_KNEE = 13
 RIGHT_KNEE = 14
+LEFT_ANKLE = 15
+RIGHT_ANKLE = 16
 
 # --------------------------------------------------
 # Load model
 # --------------------------------------------------
 
 model = YOLO(MODEL_PATH)
-
-
-def distance(point_a, point_b):
-    """Euclidean distance between two 2D points."""
-    return np.linalg.norm(point_a - point_b)
-
 
 def distance(point_a, point_b):
     """Euclidean distance between two 2D points."""
@@ -72,6 +68,10 @@ def classify_gesture(keypoints, confidences):
     rw = keypoints[RIGHT_WRIST]
     lh = keypoints[LEFT_HIP]
     rh = keypoints[RIGHT_HIP]
+    rk = keypoints[RIGHT_KNEE]
+    lk = keypoints[LEFT_KNEE]
+    ra = keypoints[RIGHT_ANKLE]
+    la = keypoints[LEFT_ANKLE]
 
     shoulder_width = distance(ls, rs)
     if shoulder_width < 4:
@@ -81,6 +81,8 @@ def classify_gesture(keypoints, confidences):
     shoulder_y = (ls[1] + rs[1]) / 2.0
     hip_y = (lh[1] + rh[1]) / 2.0
     torso_height = hip_y - shoulder_y
+
+    ankle_distance = distance(la, ra)
 
     if torso_height < 6:
         return "No Gesture"
@@ -122,9 +124,9 @@ def classify_gesture(keypoints, confidences):
     right_wrist_high = rw[1] < (rs[1] - raised_margin)
 
     # Horizontal arm up thresholds (Wrist must be directly above shoulder)
-    aligned_margin = 0.1 * torso_height
-    left_wrist_aligned = (ls[0] + aligned_margin) < lw[0] < (ls[0] - aligned_margin)
-    right_wrist_aligned = (rs[0] + aligned_margin) < rw[0] < (rs[0] - aligned_margin)
+    aligned_margin = 0.35 * torso_height
+    left_wrist_aligned = (ls[0] + aligned_margin) > lw[0] > (ls[0] - aligned_margin)
+    right_wrist_aligned = (rs[0] + aligned_margin) > rw[0] > (rs[0] - aligned_margin)
 
     # Neutral "arm down" threshold: wrist is well below chest level
     arm_down_y = shoulder_y + 0.55 * torso_height
@@ -140,8 +142,36 @@ def classify_gesture(keypoints, confidences):
     # --------------------------------------------------
     # 3. ONE HAND RAISED (Either hand up, the other down)
     # --------------------------------------------------
-    if (left_wrist_high and right_wrist_down) or (right_wrist_high and left_wrist_down):
-        return "One Hand Raised"
+    # if (left_wrist_high and right_wrist_down) or (right_wrist_high and left_wrist_down):
+    #     return "One Hand Raised"
+
+    # --------------------------------------------------
+    # 3. STAR (Hands up diagonally, legs out diagonally)
+    # --------------------------------------------------
+    t_vertical_tol = 0.60 * torso_height #0.35 orgiinal
+
+    angleOfLeftArm = np.arctan2(ls[1] - le[1], ls[0] - le[0]) * 180 / np.pi
+    angleOfRightArm = np.arctan2(rs[1] - re[1], rs[0] - re[0]) * 180 / np.pi
+    arms_at_45 = (
+        140 < angleOfLeftArm < 180
+        and 20 < angleOfRightArm < 60
+    )
+
+    left_arm_straight_out = (
+        le_outward > 0.15 * shoulder_width
+        and lw_outward > le_outward
+        and lw_outward > 0.65 * shoulder_width
+    )
+    right_arm_straight_out = (
+        re_outward > 0.15 * shoulder_width
+        and rw_outward > re_outward
+        and rw_outward > 0.65 * shoulder_width
+    )
+
+    leg_tolerance = shoulder_width * 0.55
+
+    if ankle_distance > shoulder_width + leg_tolerance and arms_at_45:
+        return "Star"
 
     # --------------------------------------------------
     # 4. T-POSE (Both arms extended straight out at shoulder level)
@@ -172,28 +202,28 @@ def classify_gesture(keypoints, confidences):
     # --------------------------------------------------
     # 5. HANDS ON HIPS (Diamond silhouette)
     # --------------------------------------------------
-    elbows_flared_out = (
-        le_outward > 0.20 * shoulder_width
-        and re_outward > 0.20 * shoulder_width
-    )
+    # elbows_flared_out = (
+    #     le_outward > 0.20 * shoulder_width
+    #     and re_outward > 0.20 * shoulder_width
+    # )
 
-    wrists_tucked_in = (
-        lw_outward < le_outward - 0.10 * shoulder_width
-        and rw_outward < re_outward - 0.10 * shoulder_width
-    )
+    # wrists_tucked_in = (
+    #     lw_outward < le_outward - 0.10 * shoulder_width
+    #     and rw_outward < re_outward - 0.10 * shoulder_width
+    # )
 
-    elbows_mid_torso = (
-        shoulder_y < le[1] < hip_y + 0.10 * torso_height
-        and shoulder_y < re[1] < hip_y + 0.10 * torso_height
-    )
+    # elbows_mid_torso = (
+    #     shoulder_y < le[1] < hip_y + 0.10 * torso_height
+    #     and shoulder_y < re[1] < hip_y + 0.10 * torso_height
+    # )
 
-    wrists_near_hips_y = (
-        abs(lw[1] - hip_y) < 0.35 * torso_height
-        and abs(rw[1] - hip_y) < 0.35 * torso_height
-    )
+    # wrists_near_hips_y = (
+    #     abs(lw[1] - hip_y) < 0.35 * torso_height
+    #     and abs(rw[1] - hip_y) < 0.35 * torso_height
+    # )
 
-    if elbows_flared_out and wrists_tucked_in and elbows_mid_torso and wrists_near_hips_y:
-        return "Hands on Hips"
+    # if elbows_flared_out and wrists_tucked_in and elbows_mid_torso and wrists_near_hips_y:
+    #     return "Hands on Hips"
 
     return "No Gesture"
 
